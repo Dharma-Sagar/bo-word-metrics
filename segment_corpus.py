@@ -119,10 +119,14 @@ class SegmentCorpus:
                             text = t.lemma
                         else:
                             text = t.text
-                text = text.strip()
+                text = text.strip().replace('༌', '་')
                 if not text.endswith('་'):
                     text += '་'
+
+                if t.pos == 'NON_WORD':
+                    text += '#'
                 words.append(text)
+
             else:
                 t = t.text.strip().replace(' ', '_')
                 words.append(t)
@@ -138,10 +142,10 @@ class SegmentCorpus:
     def process_adjustments(self, dump):
         to_add = []
         to_remove = []
-
-        double_adjs = re.findall(r'\([^ ]+ \{[^ ]+[\/\+] [^ ]+\}', dump)
-        for d in double_adjs:
-            parts = re.split(r'\(([^ ]+) \{([^ ]+)([\/\+]) ([^ ]+)\}', d)
+        # (xxx {xxx/ xxx} pattern
+        double_adjs_a = re.findall(r'\(.+? \{.+?[\/\+] .+?\}', dump)
+        for d in double_adjs_a:
+            parts = re.split(r'\((.+?) \{(.+?)([\/\+]) (.+?)\}', d)
             a, b, op, c = [p for p in parts if p]
             word1, word2 = a + b, b + c
             if op == '+':
@@ -151,7 +155,20 @@ class SegmentCorpus:
             to_add.append(word2)
             adjusted = f'{a} {b}{c}'
             dump = dump.replace(d, adjusted)
-
+        # {xxx (xxx} xxx/ pattern
+        double_adjs_a = re.findall(r'\{.+? \(.+?\} .+?[\/\+]', dump)
+        for d in double_adjs_a:
+            parts = re.split(r'\{(.+?) \((.+?)\} (.+?)([\/\+])', d)
+            a, b, c, op = [p for p in parts if p]
+            word2, word1 = a + b, b + c
+            if op == '+':
+                to_add.append(word1)
+            elif op == '/':
+                to_remove.append(word1)
+            to_add.append(word2)
+            adjusted = f'{a}{b} {c}'
+            dump = dump.replace(d, adjusted)
+        # (xxx xxx/ and xxx/ patterns
         adjs = re.findall(r'(\((.*?)([\+\/])|([^ ]+)([\+\/]))', dump)
         for a in adjs:
             raw = a[0]
@@ -159,14 +176,15 @@ class SegmentCorpus:
             if op == '+':
                 if '-' in text:
                     text = text.replace('་ -', '')
-                to_add.append(text)
+                to_add.append(text.replace('-', ''))
                 text = text.replace(' ', '')
             elif op == '/':
-                to_remove.append(text)
+                to_remove.append(text.replace('-', ''))
             # clean output
             if not text.endswith('་'):
                 text += '་'
             dump = dump.replace(raw, text)
+
         if to_add:
             to_add_file = self.tok_data_path / 'general' / 'adjustments' / 'words' / (self.chunks_path.stem + '.tsv')
             self.update_data(to_add, to_add_file)
