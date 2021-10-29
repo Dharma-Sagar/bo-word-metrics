@@ -138,6 +138,19 @@ class SegmentCorpus:
     def process_adjustments(self, dump):
         to_add = []
         to_remove = []
+
+        double_adjs = re.findall(r'\([^ ]+ \{[^ ]+[\/\+] [^ ]+\}', dump)
+        for d in double_adjs:
+            parts = re.split(r'\(([^ ]+) \{([^ ]+)([\/\+]) ([^ ]+)\}', d)
+            a, b, op, c = [p for p in parts if p]
+            word1, word2 = a + b, b + c
+            if op == '+':
+                to_add.append(word1)
+            elif op == '/':
+                to_remove.append(word2)
+            adjusted = f'{a} {b}{c}'
+            dump = dump.replace(d, adjusted)
+
         adjs = re.findall(r'(\((.*?)([\+\/])|([^ ]+)([\+\/]))', dump)
         for a in adjs:
             raw = a[0]
@@ -187,7 +200,9 @@ class SegmentCorpus:
                 out_file.write_text(out)
                 self.state['current_chunk'] += 1
                 self.state['done'] += 1
-                print(f'finished: {100*self.state["done"]/self.state["total"]}% {self.state["done"]} out of {self.state["total"]} chunks.\n')
+                c_file_total = len(self.chunks[self.state['current_file']])
+                print(f'finished: {100*self.state["done"]/self.state["total"]}% {self.state["done"]} out of '
+                      f'{self.state["total"]} chunks.\n{100*self.state["current_chunk"]/c_file_total}% of {self.state["current_file"]}')
 
             # segment and review
             if self.state['current_file'] == f_name:
