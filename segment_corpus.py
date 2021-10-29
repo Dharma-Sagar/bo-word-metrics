@@ -147,7 +147,8 @@ class SegmentCorpus:
             if op == '+':
                 to_add.append(word1)
             elif op == '/':
-                to_remove.append(word2)
+                to_remove.append(word1)
+            to_add.append(word2)
             adjusted = f'{a} {b}{c}'
             dump = dump.replace(d, adjusted)
 
