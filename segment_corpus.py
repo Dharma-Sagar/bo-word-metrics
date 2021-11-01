@@ -101,7 +101,7 @@ class SegmentCorpus:
                     self.state[f] = c
 
     def tokenize(self, current):
-        lemmatization_exceptions = ['བཅས་']
+        lemmatization_exceptions = ['བཅས་', 'མཁས་']
         tokens = self.tok.tokenize(current)
         words = []
         for t in tokens:
@@ -131,7 +131,16 @@ class SegmentCorpus:
             else:
                 t = t.text.strip().replace(' ', '_')
                 words.append(t)
-        return ' '.join(words)
+
+        tokenized = ' '.join(words)
+
+        # do replacements
+        repl_path = self.tok_data_path / 'general' / 'adjustments' / 'rules' / 'replacements.tsv'
+        for line in repl_path.read_text():
+            orig, repl = line.split('\t')
+            tokenized = tokenized.replace(orig, repl)
+
+        return tokenized
 
     def update_data(self, words, file):
         if not file.is_file():
