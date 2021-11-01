@@ -101,6 +101,7 @@ class SegmentCorpus:
                     self.state[f] = c
 
     def tokenize(self, current):
+        lemmatization_exceptions = ['བཅས་']
         tokens = self.tok.tokenize(current)
         words = []
         for t in tokens:
@@ -115,7 +116,7 @@ class SegmentCorpus:
                             text = t.text
                     else:
                         # Hack because of botok limitation:
-                        if t.affixation and 'aa' in t.affixation and t.affixation['aa']:
+                        if t.text not in lemmatization_exceptions and t.affixation and 'aa' in t.affixation and t.affixation['aa']:
                             text = t.lemma
                         else:
                             text = t.text
