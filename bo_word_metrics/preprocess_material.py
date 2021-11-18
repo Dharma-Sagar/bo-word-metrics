@@ -19,7 +19,7 @@ if __name__ == '__main__':
     a0 = 'input/esukhia/A0'
     a1_easy = 'input/esukhia/A1/A1-easy'
     in_path = Path(a1_easy)
-    out_path = Path('output') / in_path.parts[-1]
+    out_path = Path('../output') / in_path.parts[-1]
     if not out_path.is_dir():
         out_path.mkdir()
     for f in in_path.glob('*_sentences.txt'):
